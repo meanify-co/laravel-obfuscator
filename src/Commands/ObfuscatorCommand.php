@@ -14,6 +14,7 @@ class ObfuscatorCommand extends Command
                             {--decode : Decode obfuscated ID}
                             {--test : Decode obfuscated ID}
                             {--id= : Original ID to encode or obfuscated ID to decode}
+                            {--model= : Model from ID value}
                             {--list : Show last 20 failures by default}
                             {--count= : number of failures to list}
                             {--clear : delete obfuscated failures}';
