@@ -13,9 +13,9 @@ class ObfuscatorCommand extends Command
                             {--encode : Generate obfuscated ID}
                             {--decode : Decode obfuscated ID}
                             {--test : Decode obfuscated ID}
-                            {--id : Original ID to encode or obfuscated ID to decode}
+                            {--id= : Original ID to encode or obfuscated ID to decode}
                             {--list : Show last 20 failures by default}
-                            {--count : number of failures to list}
+                            {--count= : number of failures to list}
                             {--clear : delete obfuscated failures}';
 
     protected $description = 'Handle obfuscator failures and generate obfuscated ids';
