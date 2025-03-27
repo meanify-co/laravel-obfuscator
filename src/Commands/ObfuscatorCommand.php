@@ -28,6 +28,7 @@ class ObfuscatorCommand extends Command
             $id    = $this->ask('Type ID to generate obfuscated value');
             $model = $this->ask('Type Model\'s path from ID');
 
+            dd(IdObfuscator::encode($id, $model));
             return IdObfuscator::encode($id, $model);
         }
         else if ($this->option('decode'))
@@ -78,7 +79,7 @@ class ObfuscatorCommand extends Command
             }
         }
 
-        $this->info('Type --generate to obfuscate ID, --list to display last failures or --clear to delete all data.');
+        $this->info('Type --encode to obfuscate ID, --decode to decode obfuscated, --list to display last failures or --clear to delete all data.');
         return 0;
     }
 }

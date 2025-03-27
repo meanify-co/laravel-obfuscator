@@ -14,16 +14,19 @@ class IdObfuscator
      */
     protected static function getLength(): int
     {
-        return config('obfuscator.length', 10);
+        return config('meanify-laravel-obfuscator.length', 12);
     }
 
     /**
      * @param int $id
-     * @param string $salt
+     * @param string $class_to_salt
      * @return string
      */
-    public static function encode(int $id, string $salt): string
+    public static function encode(int $id, string $class_to_salt): string
     {
+        $class_parts = explode('\\', $class_to_salt);
+        $salt        = array_pop($class_parts);
+
         $key = self::deriveKey($salt);
         $iv = str_repeat("\0", 16);
 
@@ -38,13 +41,16 @@ class IdObfuscator
 
     /**
      * @param string $obfuscated
-     * @param string $salt
+     * @param string $class_to_salt
      * @param bool $throwOnFailure
      * @return int|null
      */
-    public static function decode(string $obfuscated, string $salt, bool $throwOnFailure = false): ?int
+    public static function decode(string $obfuscated, string $class_to_salt, bool $throwOnFailure = false): ?int
     {
         $length = self::getLength();
+
+        $class_parts = explode('\\', $class_to_salt);
+        $salt        = array_pop($class_parts);
 
         if (!ctype_digit($obfuscated) || strlen($obfuscated) !== $length) {
             return self::fail("Invalid format or length", $obfuscated, $salt, $throwOnFailure);

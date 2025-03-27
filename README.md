@@ -9,6 +9,12 @@
 
 A secure, reversible, numeric ID obfuscation package for Laravel. Ideal for hiding real primary keys in URLs and APIs while keeping the format clean and short.
 
+## Requirements
+
+- Laravel ^10.0
+- PHP ^8.0
+- PHP GMP
+
 ## Features
 
 - Numeric-only obfuscated IDs
@@ -23,6 +29,6 @@ A secure, reversible, numeric ID obfuscation package for Laravel. Ideal for hidi
 
 ```bash
 composer require meanify/laravel-obfuscator:dev-master
-php artisan vendor:publish --tag=meanify-laravel-obfuscator-config
-php artisan vendor:publish --tag=meanify-laravel-obfuscator-migrations
+php artisan vendor:publish --tag=meanify-configs
+php artisan vendor:publish --tag=meanify-migrations
 php artisan migrate
