@@ -49,7 +49,7 @@ trait MeanifyLaravelObfuscatorTrait
      */
     public function hasObfuscatedIdReplacementEnabled(): bool
     {
-        return in_array('obfuscated_id', $this->appends ?? []) &&
+        return in_array('obfuscated_id', $this->getArrayableAppends() ?? []) &&
             !$this->ignore_obfuscated_id_replacement;
     }
 
