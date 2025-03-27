@@ -1,5 +1,5 @@
 <?php
-namespace Meanify\IdObfuscator\Console;
+namespace Meanify\LaravelObfuscator\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;

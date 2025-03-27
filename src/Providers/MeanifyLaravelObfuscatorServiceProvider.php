@@ -3,6 +3,7 @@
 namespace Meanify\LaravelObfuscator\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Meanify\LaravelObfuscator\Commands\ObfuscatorCommand;
 
 class MeanifyLaravelObfuscatorServiceProvider extends ServiceProvider
 {
@@ -18,13 +19,13 @@ class MeanifyLaravelObfuscatorServiceProvider extends ServiceProvider
 
         if ($this->app->runningInConsole()) {
             $this->commands([
-                Console\ObfuscatorFailures::class,
+                ObfuscatorCommand::class,
             ]);
         }
     }
 
     public function register(): void
     {
-        $this->mergeConfigFrom(__DIR__ . '/../config/meanify-laravel-obfuscator.php', 'meanify-laravel-obfuscator');
+        $this->mergeConfigFrom(__DIR__ . '/../Config/meanify-laravel-obfuscator.php', 'meanify-laravel-obfuscator');
     }
 }
