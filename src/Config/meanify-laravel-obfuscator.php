@@ -3,7 +3,7 @@
 return [
     'length' =>  env('MEANIFY_LARAVEL_OBFUSCATOR_LENGTH', 12),
 
-    'alphabetic' => env('MEANIFY_LARAVEL_OBFUSCATOR_ALPHANUMERIC', false),
+    'alphabetic' => env('MEANIFY_LARAVEL_OBFUSCATOR_ALPHABETIC', 'ABCDEF1234567890'), //Min 16 chars
 
     'secret' => env('MEANIFY_LARAVEL_OBFUSCATOR_SECRET', env('APP_KEY')),
 

@@ -28,8 +28,8 @@ class ObfuscatorCommand extends Command
     {
         if ($this->option('encode'))
         {
-            $id    = $this->ask('Type ID to generate obfuscated value');
-            $model = $this->ask('Type Model\'s path from ID');
+            $id    = $this->option('id') ?? $this->ask('Type ID to generate obfuscated value');
+            $model = $this->option('model') ?? $this->ask('Type Model\'s path from ID');
 
             $rows = [];
 
@@ -51,8 +51,8 @@ class ObfuscatorCommand extends Command
         }
         else if ($this->option('decode'))
         {
-            $id    = $this->ask('Type ID to get decoded value');
-            $model = $this->ask('Type Model\'s path from ID');
+            $id    = $this->option('id') ?? $this->ask('Type ID to get decoded value');
+            $model = $this->option('model') ?? $this->ask('Type Model\'s path from ID');
 
             $rows = [];
 
@@ -74,8 +74,8 @@ class ObfuscatorCommand extends Command
         }
         else if ($this->option('test'))
         {
-            $id    = $this->ask('Type ID to obfuscate value and decode again');
-            $model = $this->ask('Type Model\'s path from ID');
+            $id    = $this->option('id') ?? $this->ask('Type ID to obfuscate value and decode again');
+            $model = $this->option('model') ?? $this->ask('Type Model\'s path from ID');
 
             //Encode
             $rows   = [];
