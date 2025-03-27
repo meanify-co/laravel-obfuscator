@@ -74,6 +74,23 @@ $user->hasObfuscatedIdReplacementEnabled(); // checks if replacement is active
 
 ---
 
+## ⚠️ Obfuscation Scope & Collision Risk
+
+This package uses the model's class name as the obfuscation salt by default.
+
+**You are safe by default if each model represents a single real table.**
+
+| Scenario                                                       | Risk of Collision? |
+|----------------------------------------------------------------|--------------------|
+| One model → one physical table                                 | ❌ No              |
+| Model pointing to multiple tables (`$table` changes dynamically) | ✅ Yes             |
+| Same model used across multiple apps/databases                 | ✅ Yes             |
+| Duplicated IDs across environments (e.g., staging/prod)        | ✅ Yes             |
+
+> To ensure unique obfuscation context across environments or apps, consider using a custom salt by defining `public static string $obfuscator_salt` in your model.
+
+---
+
 ## 📦 Artisan Command
 
 List or clear failed decodings:
