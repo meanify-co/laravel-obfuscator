@@ -12,6 +12,7 @@ class ObfuscatorCommand extends Command
     protected $signature = 'meanify:obfuscator 
                             {--encode : Generate obfuscated ID}
                             {--decode : Decode obfuscated ID}
+                            {--test : Decode obfuscated ID}
                             {--list : Show last 20 failures by default}
                             {--count : number of failures to list}
                             {--clear : delete obfuscated failures}';
@@ -28,15 +29,93 @@ class ObfuscatorCommand extends Command
             $id    = $this->ask('Type ID to generate obfuscated value');
             $model = $this->ask('Type Model\'s path from ID');
 
-            dd(IdObfuscator::encode($id, $model));
-            return IdObfuscator::encode($id, $model);
+            $rows = [];
+
+            foreach (explode(',', $id) as $id)
+            {
+                $rows[] = [
+                    $id,
+                    $model,
+                    IdObfuscator::encode($id, $model)
+                ];
+            }
+
+            $this->table(
+                ['Original ID', 'Model', 'Result (obfuscated)'],
+                $rows
+            );
+
+            return 0;
         }
         else if ($this->option('decode'))
         {
             $id    = $this->ask('Type ID to get decoded value');
             $model = $this->ask('Type Model\'s path from ID');
 
-            return IdObfuscator::decode($id, $model);
+            $rows = [];
+
+            foreach (explode(',', $id) as $id)
+            {
+                $rows[] = [
+                    $id,
+                    $model,
+                    IdObfuscator::decode($id, $model)
+                ];
+            }
+
+            $this->table(
+                ['Obfuscated ID', 'Model', 'Original ID'],
+                $rows
+            );
+
+            return 0;
+        }
+        else if ($this->option('test'))
+        {
+            $id    = $this->ask('Type ID to obfuscate value and decode again');
+            $model = $this->ask('Type Model\'s path from ID');
+
+            //Encode
+            $rows   = [];
+            $values = [];
+
+            foreach (explode(',', $id) as $id)
+            {
+                $result = IdObfuscator::encode($id, $model);
+                $rows[] = [
+                    $id,
+                    $model,
+                    $result
+                ];
+
+                $values[] = $result;
+            }
+
+            $this->table(
+                ['Original ID', 'Model', 'Result (obfuscated)'],
+                $rows
+            );
+
+            //Decode
+            $rows   = [];
+
+            foreach ($values as $id)
+            {
+                $result = IdObfuscator::decode($id, $model);
+                $rows[] = [
+                    $id,
+                    $model,
+                    $result
+                ];
+            }
+
+            $this->table(
+                ['Obfuscated ID', 'Model', 'Original ID'],
+                $rows
+            );
+
+
+            return 0;
         }
         else
         {

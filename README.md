@@ -1,3 +1,4 @@
+
 <p align="center">
   <a href="https://www.meanify.co?from=github&lib=laravel-obfuscator">
     <img src="https://meanify.co/assets/core/img/logo/png/meanify_color_dark_horizontal_02.png" width="200" alt="Meanify Logo" />
@@ -6,114 +7,122 @@
 
 # Laravel Obfuscator
 
-A secure, reversible, numeric ID obfuscation package for Laravel.  
-Ideal for hiding real primary keys in URLs and APIs while keeping the format clean and short.
+A secure and reversible numeric ID obfuscation package for Laravel. Ideal for hiding real primary keys in URLs and APIs while keeping the format clean, consistent, and safe.
+
+> Now powered by [Hashids](https://hashids.org/php) (via `vinkla/hashids`) and fully integrated with Laravel.
 
 ---
 
 ## ✅ Features
 
-- Numeric-only obfuscated IDs
-- Reversible (encode/decode)
-- Fixed-length configurable output (e.g., 10–14 digits)
-- Built-in check digit for integrity validation
-- Salted by model class name
-- Fallback logging (file and/or database)
-- Artisan command to list and clear failures
-- `trait` for automatic obfuscation in models
-- Optional replacement of `id` in JSON/array output
+- 🔐 Reversible obfuscation
+- 🔢 Numeric-only or alphanumeric output (configurable)
+- 📏 Fixed or minimum output length
+- 🧂 Salted per model
+- 📦 Simple integration with Eloquent
+- 🔁 Artisan command to encode and decode values
+- 🛠 Optional failure logging to database
 
 ---
 
-## ⚙️ Requirements
+## 🚀 Requirements
 
-- Laravel ^10.0 (tested on 10–12)
+- Laravel ^10.0
 - PHP ^8.0
-- PHP GMP extension
+- Package `vinkla/hashids` (already included)
 
 ---
 
-## 🚀 Installation
+## ⚙️ Installation
 
 ```bash
-composer require meanify/laravel-obfuscator
+composer require meanify/laravel-obfuscator:dev-master
 php artisan vendor:publish --tag=meanify-configs
+```
+
+If using DB logging for failures:
+
+```bash
 php artisan vendor:publish --tag=meanify-migrations
 php artisan migrate
 ```
 
 ---
 
-## 🧬 Usage in Model (with Trait)
+## 🧪 Configuration
+
+`config/meanify-laravel-obfuscator.php`:
 
 ```php
-use Meanify\LaravelObfuscator\Traits\MeanifyLaravelObfuscatorTrait;
+return [
+    'length' => 12, // minimum hash length
+    'alphabetic' => false, // false = only numbers, true = alphanumeric
+    'secret' => env('OBFUSCATOR_SECRET', env('APP_KEY')), // used as salt
+    'log_to_db' => false, // store decode failures in the DB
+];
+```
 
-class User extends Model
+---
+
+## 🧬 How It Works
+
+Internally uses `\Hashids\Hashids` with a salt based on your config + model name:
+
+```php
+$salt = config('meanify-laravel-obfuscator.secret') . '|' . $model;
+```
+
+This ensures uniqueness per model and environment.
+
+---
+
+## 🧑‍💻 Usage
+
+```php
+use Meanify\LaravelObfuscator\Support\IdObfuscator;
+
+IdObfuscator::encode(123, App\Models\User::class); // e.g. '408248843449'
+
+IdObfuscator::decode('408248843449', App\Models\User::class); // 123
+```
+
+---
+
+## 🔁 Auto-Apply to Models
+
+Create a trait like:
+
+```php
+use Meanify\LaravelObfuscator\Support\IdObfuscator;
+
+public function getObfuscatedIdAttribute(): string
 {
-    use MeanifyLaravelObfuscatorTrait;
-
-    protected $appends = ['obfuscated_id'];
+    return IdObfuscator::encode($this->id, static::class);
 }
 ```
 
-When `obfuscated_id` is in `appends`, it will automatically:
-- Encode the real `id`
-- Replace the `id` field in the output (JSON/array)
-- Hide the `obfuscated_id` itself (not shown in response)
+Optionally override `attributesToArray()` to replace `id` with `obfuscated_id` in JSON responses.
 
 ---
 
-## ✅ Helper Methods (Fluent API)
-
-```php
-$user->preserveRealId(); // disables ID replacement temporarily
-$user->replaceWithObfuscatedId(); // re-enables replacement
-$user->hasObfuscatedIdReplacementEnabled(); // checks if replacement is active
-```
-
----
-
-## ⚠️ Obfuscation Scope & Collision Risk
-
-This package uses the model's class name as the obfuscation salt by default.
-
-**You are safe by default if each model represents a single real table.**
-
-| Scenario                                                       | Risk of Collision? |
-|----------------------------------------------------------------|--------------------|
-| One model → one physical table                                 | ❌ No              |
-| Model pointing to multiple tables (`$table` changes dynamically) | ✅ Yes             |
-| Same model used across multiple apps/databases                 | ✅ Yes             |
-| Duplicated IDs across environments (e.g., staging/prod)        | ✅ Yes             |
-
-> To ensure unique obfuscation context across environments or apps, consider using a custom salt by defining `public static string $obfuscator_salt` in your model.
-
----
-
-## 📦 Artisan Command
-
-List or clear failed decodings:
+## 🧰 Artisan Command
 
 ```bash
-php artisan obfuscator:failures
-php artisan obfuscator:failures --clear
+php artisan meanify:obfuscator --encode --id=1,2,3 --model=App\Models\User
+php artisan meanify:obfuscator --decode --id=408248843449 --model=App\Models\User
 ```
 
 ---
 
-## 💡 Example Output
+## ⚠️ Limitations
 
-```json
-{
-  "id": "0283917045",
-  "name": "John",
-  "email": "john@example.com"
-}
-```
-
----
-
-## 🛡️ License
-
-MIT © Meanify
+| Scenario                            | Supported? | Notes                                                                 |
+|-------------------------------------|------------|-----------------------------------------------------------------------|
+| Numeric obfuscation                | ✅         | Default mode (`alphabetic: false`)                                   |
+| Alphanumeric obfuscation           | ✅         | Set `alphabetic: true` in config                                     |
+| Obfuscation per model              | ✅         | Each model uses its class name in the salt                           |
+| Fixed-length output                | ✅         | Length is minimum guaranteed by `hashids`                            |
+| Reversibility with custom salt     | ✅         | Requires stable secret + model name                                  |
+| Cryptographic security             | ❌         | Not intended for high-security encryption (only obfuscation)         |
+| Collision resistance               | ✅         | Hashids guarantees uniqueness for the same salt and config           |
+| Hidden ID in API responses         | ✅         | Replace `id` with `obfuscated_id` in `attributesToArray()`           |
