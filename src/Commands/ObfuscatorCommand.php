@@ -6,13 +6,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Str;
 use Meanify\LaravelObfuscator\Support\IdObfuscator;
+use function Laravel\Prompts\form;
+use function Laravel\Prompts\select;
+use function Laravel\Prompts\spin;
 
 class ObfuscatorCommand extends Command
 {
     protected $signature = 'meanify:obfuscator 
-                            {--encode : Generate obfuscated ID}
-                            {--decode : Decode obfuscated ID}
-                            {--test : Decode obfuscated ID}
                             {--id= : Original ID to encode or obfuscated ID to decode}
                             {--model= : Model from ID value}
                             {--list : Show last 20 failures by default}
@@ -26,84 +26,30 @@ class ObfuscatorCommand extends Command
      */
     public function handle(): int
     {
-        if ($this->option('encode'))
+        $action = select(
+            label: 'What do you wanna execute?',
+            options: ['real' => 'Insert real IDs to obfuscate', 'obfuscated' => 'Insert obfuscated IDs to validate real ID', 'failures' => 'Show failures'],
+            default: 'real',
+        );
+
+        if($action !== 'failures')
         {
-            $id    = $this->option('id') ?? $this->ask('Type ID to generate obfuscated value');
-            $model = $this->option('model') ?? $this->ask('Type Model\'s path from ID');
 
-            $rows = [];
+            $responses = form()
+                ->text('Insert IDs (separated by comman)',
+                    required: true,
+                    name: 'id'
+                )
+                ->text('Type model path from IDs', required: true, name: 'model', placeholder: 'E.g.: App\Models\User', default: 'App\Models\User')
+                ->submit();
 
-            foreach (explode(',', $id) as $id)
-            {
-                $rows[] = [
-                    $id,
-                    $model,
-                    IdObfuscator::encode($id, $model)
-                ];
-            }
-
-            $this->table(
-                ['Original ID', 'Model', 'Result (obfuscated)'],
-                $rows
-            );
-
-            return 0;
-        }
-        else if ($this->option('decode'))
-        {
-            $id    = $this->option('id') ?? $this->ask('Type ID to get decoded value');
-            $model = $this->option('model') ?? $this->ask('Type Model\'s path from ID');
-
-            $rows = [];
-
-            foreach (explode(',', $id) as $id)
-            {
-                $rows[] = [
-                    $id,
-                    $model,
-                    IdObfuscator::decode($id, $model)
-                ];
-            }
-
-            $this->table(
-                ['Obfuscated ID', 'Model', 'Original ID'],
-                $rows
-            );
-
-            return 0;
-        }
-        else if ($this->option('test'))
-        {
-            $id    = $this->option('id') ?? $this->ask('Type ID to obfuscate value and decode again');
-            $model = $this->option('model') ?? $this->ask('Type Model\'s path from ID');
-
-            //Encode
-            $rows   = [];
-            $values = [];
-
-            foreach (explode(',', $id) as $id)
-            {
-                $result = IdObfuscator::encode($id, $model);
-                $rows[] = [
-                    $id,
-                    $model,
-                    $result
-                ];
-
-                $values[] = $result;
-            }
-
-            $this->table(
-                ['Original ID', 'Model', 'Result (obfuscated)'],
-                $rows
-            );
-
-            //Decode
+            $ids   = $responses['id'];
+            $model = $responses['model'];
             $rows   = [];
 
-            foreach ($values as $id)
+            foreach (explode(',', $ids) as $id)
             {
-                $result = IdObfuscator::decode($id, $model);
+                $result = $action == 'real' ? IdObfuscator::encode($id, $model) : IdObfuscator::decode($id, $model);
                 $rows[] = [
                     $id,
                     $model,
@@ -112,10 +58,9 @@ class ObfuscatorCommand extends Command
             }
 
             $this->table(
-                ['Obfuscated ID', 'Model', 'Original ID'],
+                $action == 'real' ? ['Real ID', 'Model', 'Obfuscated ID'] : ['Obfuscated ID', 'Model', 'Real ID'],
                 $rows
             );
-
 
             return 0;
         }
@@ -128,39 +73,48 @@ class ObfuscatorCommand extends Command
                 $this->error("Table '{$table}' not found.");
                 return 1;
             }
+            
+            $responses = form()
+                ->text('Define number of rows to display list',
+                    required: true,
+                    name: 'count',
+                    default: 20
+                )
+                ->submit();
+            
+            $count = $responses['count'];
 
-            if ($this->option('list'))
+            $failures = DB::table($table)->orderByDesc('created_at')->limit($count)->get();
+
+            if ($failures->isEmpty())
             {
-                $count = $this->option('count') ?? 20;
-
-                $failures = DB::table($table)->orderByDesc('created_at')->limit($count)->get();
-
-                if ($failures->isEmpty()) {
-                    $this->info('No failures found.');
-                    return 0;
-                }
-
-                $this->table(
-                    ['ID', 'Model', 'Input', 'Reason', 'Created At'],
-                    $failures->map(fn ($f) => [
-                        $f->id,
-                        $f->model,
-                        $f->input,
-                        Str::limit($f->reason, 50),
-                        $f->created_at,
-                    ])
-                );
+                $this->info('No failures found.');
                 return 0;
             }
-            else if ($this->option('clear'))
+
+            $this->table(
+                ['ID', 'Model', 'Input', 'Reason', 'Created At'],
+                $failures->map(fn ($f) => [
+                    $f->id,
+                    $f->model,
+                    $f->input,
+                    Str::limit($f->reason, 50),
+                    $f->created_at,
+                ])
+            );
+
+            $responses = form()
+                ->confirm('Do you wanna delete all failures?', name: 'confirm', default: false)
+                ->submit();
+
+            if($responses['confirm'])
             {
                 $count = DB::table($table)->delete();
                 $this->info("{$count} failures deleted.");
                 return 0;
             }
-        }
 
-        $this->info('Type --encode to obfuscate ID, --decode to decode obfuscated, --list to display last failures or --clear to delete all data.');
-        return 0;
+            return 0;
+        }
     }
 }

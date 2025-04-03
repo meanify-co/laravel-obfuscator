@@ -4,12 +4,13 @@ namespace Meanify\LaravelObfuscator\Support;
 
 class IdObfuscator
 {
+    protected static $default_alphabet = 'abcdefghijklmnopqrstuvwxyz1234567890';
 
     public static function encode(int $id, string $class_to_salt): string
     {
         $salt     = self::buildSalt($class_to_salt);
         $length   = config('meanify-laravel-obfuscator.length', 12);
-        $alphabet = config('meanify-laravel-obfuscator.alphabetic', 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890');
+        $alphabet = self::getAlphabet();
 
         $hashids = new \Hashids\Hashids($salt, $length, $alphabet);
 
@@ -20,7 +21,7 @@ class IdObfuscator
     {
         $salt     = self::buildSalt($class_to_salt);
         $length   = config('meanify-laravel-obfuscator.length', 12);
-        $alphabet = config('meanify-laravel-obfuscator.alphabetic', 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890');
+        $alphabet = self::getAlphabet();
 
         $hashids = new \Hashids\Hashids($salt, $length, $alphabet);
 
@@ -33,6 +34,12 @@ class IdObfuscator
 
     protected static function buildSalt(string $model): string
     {
-        return config('meanify-laravel-obfuscator.secret') . '|' . $model;
+        return md5(config('meanify-laravel-obfuscator.secret') . '|' . $model);
     }
+
+    protected static function getAlphabet(): string
+    {
+        return config('meanify-laravel-obfuscator.alphabet', self::$default_alphabet);
+    }
+
 }
